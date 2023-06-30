@@ -175,29 +175,31 @@ select distinct num AS ConsecutiveNums from cte where (num=num1) and (num=num2);
 
 
 -- 181. Employees Earning More Than Their Managers
-DROP TABLE IF EXISTS Employee;
-CREATE TABLE IF NOT EXISTS Employee (
+DROP TABLE IF EXISTS Employee3;
+CREATE TABLE IF NOT EXISTS Employee3 (
     id INT,
     name VARCHAR(255),
     salary INT,
     managerId INT
 );
 
-Truncate table Employee;
+Truncate table Employee3;
 
-insert into Employee (id, name, salary, managerId) values ('1', 'Joe', '70000', '3');
-insert into Employee (id, name, salary, managerId) values ('2', 'Henry', '80000', '4');
-insert into Employee (id, name, salary, managerId) values ('3', 'Sam', '60000', NULL);
-insert into Employee (id, name, salary, managerId) values ('4', 'Max', '90000', NULL);
+insert into Employee3 (id, name, salary, managerId) values ('1', 'Joe', '70000', '3');
+insert into Employee3 (id, name, salary, managerId) values ('2', 'Henry', '80000', '4');
+insert into Employee3 (id, name, salary, managerId) values ('3', 'Sam', '60000', NULL);
+insert into Employee3 (id, name, salary, managerId) values ('4', 'Max', '90000', NULL);
+
+SELECT * FROM Employee3;
 
 -- Write an SQL query to find the employees who earn more than their managers.
 
 SELECT 
     e1.*, e2.*
 FROM
-    Employee e1
+    Employee3 e1
         LEFT JOIN
-    Employee1 e2 ON e1.managerId = e2.id
+    Employee3 e2 ON e1.managerId = e2.id
 WHERE
     e1.salary > e2.salary;
 
@@ -279,18 +281,21 @@ WITH repeatedVisit AS (
 	SELECT 
     id,
     visit_date,
+    LAG (people, 2) OVER() AS prevPeople2,
+    LAG (people, 1) OVER() AS prevPeople1,
     people AS people,
     LEAD (people, 1) OVER() AS people1,
-    LEAD (people, 2) OVER() AS people2,
-    LAG (people, 1) OVER() AS prevPeople1,
-    LAG (people, 2) OVER() AS prevPeople2
+    LEAD (people, 2) OVER() AS people2    
     FROM Stadium    
 )
-SELECT id, visit_date, people1
+SELECT id, visit_date, people
 FROM repeatedVisit
-WHERE people >= 100 AND people1 >= 100 AND people2 >= 100
-OR prevPeople1 >= 100 AND people >= 100 AND people1 >= 100
-OR prevPeople2 >= 100 AND prevPeople1 >= 100 AND people1 >= 100
+WHERE 
+(prevPeople2 >= 100 AND prevPeople1 >= 100 AND people >= 100)
+OR
+(prevPeople1 >= 100 AND people >= 100 AND people1 >= 100)
+OR
+(people >= 100 AND people1 >= 100 AND people2 >= 100)
 ORDER BY visit_date;
 
 
@@ -312,6 +317,32 @@ with new_group as(
         having count(id) >= 3
         );
 
+
+-- Solution IF id is not given properly
+WITH temp1 AS (
+	SELECT 
+			*,
+			ROW_NUMBER() OVER(ORDER BY visit_date) AS newID
+	FROM Stadium
+),
+temp2 AS (
+SELECT
+	*,
+    newID - ROW_NUMBER() OVER(ORDER BY newID) AS newRow
+FROM temp1
+WHERE people >= 100
+)
+SELECT 
+	id,
+    visit_date,
+    people
+FROM temp2
+WHERE newRow IN (
+				SELECT newRow
+                FROM temp2
+                GROUP BY newRow
+                HAVING COUNT(newID) >= 3
+);
 
 
 -- 184. Department Highest Salary
@@ -341,6 +372,9 @@ Truncate table Department;
 
 insert into Department (id, name) values ('1', 'IT');
 insert into Department (id, name) values ('2', 'Sales');
+
+SELECT * FROM Employee;
+SELECT * FROM Department;
 
 -- Write an SQL query to find employees who have the highest salary in each of the departments.
 
@@ -411,39 +445,44 @@ JOIN Department d
 ON e.departmentId = d.id
 JOIN CTE c
 ON c.departmentId = d.id
-WHERE c.salRank <= 1 AND c.salary = e.salary
+WHERE c.salRank = 1 AND c.salary = e.salary
 ORDER BY Salary DESC;
 
 
 -- 185. Department Top Three Salaries
-DROP TABLE IF EXISTS Employee;
+DROP TABLE IF EXISTS Employee1;
 
-CREATE TABLE IF NOT EXISTS Employee (
+CREATE TABLE IF NOT EXISTS Employee1 (
     id INT,
     name VARCHAR(255),
     salary INT,
     departmentId INT
 );
 
-CREATE TABLE IF NOT EXISTS Department (
+DROP TABLE IF EXISTS Department1;
+
+CREATE TABLE IF NOT EXISTS Department1 (
     id INT,
     name VARCHAR(255)
 );
 
-Truncate table Employee;
+Truncate table Employee1;
 
-insert into Employee (id, name, salary, departmentId) values ('1', 'Joe', '85000', '1');
-insert into Employee (id, name, salary, departmentId) values ('2', 'Henry', '80000', '2');
-insert into Employee (id, name, salary, departmentId) values ('3', 'Sam', '60000', '2');
-insert into Employee (id, name, salary, departmentId) values ('4', 'Max', '90000', '1');
-insert into Employee (id, name, salary, departmentId) values ('5', 'Janet', '69000', '1');
-insert into Employee (id, name, salary, departmentId) values ('6', 'Randy', '85000', '1');
-insert into Employee (id, name, salary, departmentId) values ('7', 'Will', '70000', '1');
+insert into Employee1 (id, name, salary, departmentId) values ('1', 'Joe', '85000', '1');
+insert into Employee1 (id, name, salary, departmentId) values ('2', 'Henry', '80000', '2');
+insert into Employee1 (id, name, salary, departmentId) values ('3', 'Sam', '60000', '2');
+insert into Employee1 (id, name, salary, departmentId) values ('4', 'Max', '90000', '1');
+insert into Employee1 (id, name, salary, departmentId) values ('5', 'Janet', '69000', '1');
+insert into Employee1 (id, name, salary, departmentId) values ('6', 'Randy', '85000', '1');
+insert into Employee1 (id, name, salary, departmentId) values ('7', 'Will', '70000', '1');
 
 Truncate table Department;
 
-insert into Department (id, name) values ('1', 'IT');
-insert into Department (id, name) values ('2', 'Sales');
+insert into Department1 (id, name) values ('1', 'IT');
+insert into Department1 (id, name) values ('2', 'Sales');
+
+SELECT * FROM Employee1;
+SELECT * FROM Department1;
 
 -- A company's executives are interested in seeing who earns the most money in each of the company's departments. 
 -- A high earner in a department is an employee who has a salary in the top three unique salaries for that department.
@@ -485,7 +524,25 @@ WHERE
 ) < 3
 ORDER BY d.name, e.salary DESC;
 
-SELECT * FROM Employees;
+-- Solution 3
+WITH CTE AS
+(
+	SELECT
+		DISTINCT
+		d.name AS Department,
+		e.name AS Employee,
+		e.salary AS Salary,
+		DENSE_RANK() OVER (PARTITION BY departmentId ORDER BY salary DESC) AS salRank
+	FROM Employee1 e
+    JOIN Department1 d
+    ON e.departmentId = d.id   
+)
+SELECT 
+	Department,
+    Employee,
+    Salary
+FROM CTE c
+WHERE salRank <= 3;
 
 
 -- Solution 1 Using Employees Table
@@ -1376,28 +1433,335 @@ FROM
 GROUP BY teacher_id;
 
 
+SELECT 
+    employee_id,
+    (SELECT IF (employee_id % 2 = 1, salary, 0) FROM Employees2) AS bonus
+FROM Employees2
+WHERE name NOT LIKE 'M%';
 
+-- 1873. Calculate Special Bonus
 
+CREATE TABLE IF NOT EXISTS Employees2 (
+    employee_id INT,
+    name VARCHAR(30),
+    salary INT
+);
 
+Truncate table Employees2;
 
+insert into Employees2 (employee_id, name, salary) values ('2', 'Meir', '3000');
+insert into Employees2 (employee_id, name, salary) values ('3', 'Michael', '3800');
+insert into Employees2 (employee_id, name, salary) values ('7', 'Addilyn', '7400');
+insert into Employees2 (employee_id, name, salary) values ('8', 'Juan', '6100');
+insert into Employees2 (employee_id, name, salary) values ('9', 'Kannon', '7700');
+
+SELECT * FROM Employees2;
 
+-- Write an SQL query to calculate the bonus of each employee. The bonus of an employee is 100% of their salary 
+-- if the ID of the employee is an odd number and the employee name does not start with the character 'M'. The bonus of an employee is 0 otherwise.
 
+-- Return the result table ordered by employee_id.
 
+SELECT 
+	employee_id,
+    IF(employee_id % 2 AND name NOT LIKE 'M%',
+        salary,
+        0) AS bonus
+FROM
+    Employees2
+ORDER BY employee_id;
+
+
+-- 627. Swap Salary
+
+CREATE TABLE IF NOT EXISTS Salary (
+    id INT,
+    name VARCHAR(100),
+    sex CHAR(1),
+    salary INT
+);
+
+Truncate table Salary;
+
+insert into Salary (id, name, sex, salary) values ('1', 'A', 'm', '2500');
+insert into Salary (id, name, sex, salary) values ('2', 'B', 'f', '1500');
+insert into Salary (id, name, sex, salary) values ('3', 'C', 'm', '5500');
+insert into Salary (id, name, sex, salary) values ('4', 'D', 'f', '500');
+
+SELECT * FROM Salary;
+
+/*
+	Write an SQL query to swap all 'f' and 'm' values (i.e., change all 'f' values to 'm' and vice versa) 
+    with a single update statement and no intermediate temporary tables.
+
+	Note that you must write a single update statement, do not write any select statement for this problem.
+*/
+
+UPDATE Salary
+SET sex = 
+		CASE 
+		WHEN sex = 'f' THEN 'm'
+		WHEN sex = 'm' THEN 'f'
+        END;
+		
+UPDATE Salary
+SET sex= IF(sex = 'f', 'm', 'f');
+
+
+-- 620. Not Boring Movies
+
+CREATE TABLE IF NOT EXISTS cinema (
+    id INT,
+    movie VARCHAR(255),
+    description VARCHAR(255),
+    rating FLOAT(2 , 1 )
+);
+
+Truncate table cinema;
+
+insert into cinema (id, movie, description, rating) values ('1', 'War', 'great 3D', '8.9');
+insert into cinema (id, movie, description, rating) values ('2', 'Science', 'fiction', '8.5');
+insert into cinema (id, movie, description, rating) values ('3', 'irish', 'boring', '6.2');
+insert into cinema (id, movie, description, rating) values ('4', 'Ice song', 'Fantacy', '8.6');
+insert into cinema (id, movie, description, rating) values ('5', 'House card', 'Interesting', '9.1');
+
+SELECT * FROM cinema;
+
+-- Write an SQL query to report the movies with an odd-numbered ID and a description that is not "boring".
+-- Return the result table ordered by rating in descending order.
+
+SELECT *
+FROM cinema
+WHERE id % 2 = 1 AND description != 'boring'
+ORDER BY rating DESC;
+
+-- --------------------------------------------------------------------------------
+
+-- 601. Human Traffic of Stadium
+
+CREATE TABLE IF NOT EXISTS learnsql.Stadium (
+    id INT,
+    visit_date DATE NULL,
+    people INT
+);
+
+Truncate table learnsql.Stadium;
+
+insert into learnsql.Stadium (id, visit_date, people) values ('11', '2017-01-01', '10');
+insert into learnsql.Stadium (id, visit_date, people) values ('12', '2017-01-02', '109');
+insert into learnsql.Stadium (id, visit_date, people) values ('13', '2017-01-03', '150');
+insert into learnsql.Stadium (id, visit_date, people) values ('14', '2017-01-04', '99');
+insert into learnsql.Stadium (id, visit_date, people) values ('25', '2017-01-05', '145');
+insert into learnsql.Stadium (id, visit_date, people) values ('26', '2017-01-06', '1455');
+insert into learnsql.Stadium (id, visit_date, people) values ('37', '2017-01-07', '199');
+insert into learnsql.Stadium (id, visit_date, people) values ('48', '2017-01-09', '188');
+
+SELECT * FROM learnsql.Stadium;
+
+-- Write an SQL query to display the records with three or more rows with consecutive id's, 
+-- and the number of people is greater than or equal to 100 for each.
+-- Return the result table ordered by visit_date in ascending order.
+
+-- Solution 1
+WITH repeatedVisit AS (
+	SELECT 
+    id,
+    visit_date,
+    LAG (people, 2) OVER() AS prevPeople2,
+    LAG (people, 1) OVER() AS prevPeople1,
+    people AS people,
+    LEAD (people, 1) OVER() AS people1,
+    LEAD (people, 2) OVER() AS people2    
+    FROM learnsql.Stadium    
+)
+SELECT id, visit_date, people1
+FROM repeatedVisit
+WHERE people >= 100 AND people1 >= 100 AND people2 >= 100
+OR prevPeople1 >= 100 AND people >= 100 AND people1 >= 100
+OR prevPeople2 >= 100 AND prevPeople1 >= 100 AND people1 >= 100
+ORDER BY visit_date;
+
+
+-- 1407. Top Travellers
+
+CREATE TABLE IF NOT EXISTS Users2 (
+    id INT,
+    name VARCHAR(30)
+);
+
+CREATE TABLE IF NOT EXISTS Rides2 (
+    id INT,
+    user_id INT,
+    distance INT
+);
+
+Truncate table Users2;
+
+insert into Users2 (id, name) values ('1', 'Alice');
+insert into Users2 (id, name) values ('2', 'Bob');
+insert into Users2 (id, name) values ('3', 'Alex');
+insert into Users2 (id, name) values ('4', 'Donald');
+insert into Users2 (id, name) values ('7', 'Lee');
+insert into Users2 (id, name) values ('13', 'Jonathan');
+insert into Users2 (id, name) values ('19', 'Elvis');
+
+Truncate table Rides2;
+
+insert into Rides2 (id, user_id, distance) values ('1', '1', '120');
+insert into Rides2 (id, user_id, distance) values ('2', '2', '317');
+insert into Rides2 (id, user_id, distance) values ('3', '3', '222');
+insert into Rides2 (id, user_id, distance) values ('4', '7', '100');
+insert into Rides2 (id, user_id, distance) values ('5', '13', '312');
+insert into Rides2 (id, user_id, distance) values ('6', '19', '50');
+insert into Rides2 (id, user_id, distance) values ('7', '7', '120');
+insert into Rides2 (id, user_id, distance) values ('8', '19', '400');
+insert into Rides2 (id, user_id, distance) values ('9', '7', '230');
+
+SELECT * FROM Users2;
+SELECT * FROM Rides2;
+
+/*
+	Write an SQL query to report the distance traveled by each user.
+
+	Return the result table ordered by travelled_distance in descending order, 
+	if two or more users traveled the same distance, order them by their name in ascending order.
+*/
+
+SELECT *
+FROM Users2 u
+JOIN Rides2 r
+ON u.id = r.user_id;
+
+SELECT 
+	name,
+    IFNULL(SUM(r.distance), 0) AS travelled_distance
+FROM Users2 u
+LEFT JOIN Rides2 r
+ON u.id = r.user_id
+GROUP BY u.id, name
+ORDER BY travelled_distance DESC, name;
+
+
+-- 607. Sales Person
+
+CREATE TABLE IF NOT EXISTS SalesPerson (
+    sales_id INT,
+    name VARCHAR(255),
+    salary INT,
+    commission_rate INT,
+    hire_date DATE
+);
+
+CREATE TABLE IF NOT EXISTS Company (
+    com_id INT,
+    name VARCHAR(255),
+    city VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS Orders1 (
+    order_id INT,
+    order_date DATE,
+    com_id INT,
+    sales_id INT,
+    amount INT
+);
+
+Truncate table SalesPerson;
+
+insert into SalesPerson (sales_id, name, salary, commission_rate, hire_date) values ('1', 'John', '100000', '6', '2006-4-1');
+insert into SalesPerson (sales_id, name, salary, commission_rate, hire_date) values ('2', 'Amy', '12000', '5', '2010-5-1');
+insert into SalesPerson (sales_id, name, salary, commission_rate, hire_date) values ('3', 'Mark', '65000', '12', '2008-12-25');
+insert into SalesPerson (sales_id, name, salary, commission_rate, hire_date) values ('4', 'Pam', '25000', '25', '2005-1-1');
+insert into SalesPerson (sales_id, name, salary, commission_rate, hire_date) values ('5', 'Alex', '5000', '10', '2007-2-3');
+
+Truncate table Company;
+
+insert into Company (com_id, name, city) values ('1', 'RED', 'Boston');
+insert into Company (com_id, name, city) values ('2', 'ORANGE', 'New York');
+insert into Company (com_id, name, city) values ('3', 'YELLOW', 'Boston');
+insert into Company (com_id, name, city) values ('4', 'GREEN', 'Austin');
 
+Truncate table Orders1;
 
+insert into Orders1 (order_id, order_date, com_id, sales_id, amount) values ('1', '2014-1-1', '3', '4', '10000');
+insert into Orders1 (order_id, order_date, com_id, sales_id, amount) values ('2', '2014-2-1', '4', '5', '5000');
+insert into Orders1 (order_id, order_date, com_id, sales_id, amount) values ('3', '2014-3-1', '1', '1', '50000');
+insert into Orders1 (order_id, order_date, com_id, sales_id, amount) values ('4', '2014-4-1', '1', '4', '25000');
 
+SELECT * FROM SalesPerson;
+SELECT * FROM Company;
+SELECT * FROM Orders1;
 
+-- Write an SQL query to report the names of all the salespersons who did not have any orders related to the company with the name "RED".
 
+SELECT *
+FROM Orders1 o
+JOIN Company c
+ON o.com_id = c.com_id
+RIGHT JOIN SalesPerson p
+ON o.sales_id = p.sales_id;
 
+SELECT DISTINCT p.name
+FROM SalesPerson p
+WHERE p.sales_id NOT IN (
+						SELECT DISTINCT o.sales_id
+						FROM Orders1 o
+						RIGHT JOIN Company c
+						ON o.com_id = c.com_id
+						WHERE c.com_id = 1
+);
 
 
+-- 608. Tree Node
 
+CREATE TABLE IF NOT EXISTS Tree (
+    id INT,
+    p_id INT
+);
 
+Truncate table Tree;
 
+insert into Tree (id, p_id) values ('1', NULL);
+insert into Tree (id, p_id) values ('2', '1');
+insert into Tree (id, p_id) values ('3', '1');
+insert into Tree (id, p_id) values ('4', '2');
+insert into Tree (id, p_id) values ('5', '2');
 
+SELECT * FROM Tree;
 
+-- Write an SQL query to report the type of each node in the tree.
 
+select 
+	id,
+	case
+		when p_id is null 
+        then 'Root'
+		when 
+			id in (select p_id from Tree) = p_id in (select id from Tree) 
+		then 'Inner'
+		else 'Leaf'
+	end as 'type'
+from Tree;
 
+-- Problems Remaining		https://leetcode.com/list/e97a9e5m/
+/*
+626. Exchange Seats												https://leetcode.com/problems/exchange-seats/?envType=list&envId=e97a9e5m
+1084. Sales Analysis III										https://leetcode.com/problems/sales-analysis-iii/?envType=list&envId=e97a9e5m
+1141. User Activity for the Past 30 Days I						https://leetcode.com/problems/user-activity-for-the-past-30-days-i/?envType=list&envId=e97a9e5m
+1148. Article Views I											https://leetcode.com/problems/article-views-i/?envType=list&envId=e97a9e5m
+1158. Market Analysis I											https://leetcode.com/problems/market-analysis-i/?envType=list&envId=e97a9e5m
+1179. Reformat Department Table									https://leetcode.com/problems/reformat-department-table/?envType=list&envId=e97a9e5m
+1393. Capital Gain/Loss											https://leetcode.com/problems/capital-gainloss/?envType=list&envId=e97a9e5m
+1484. Group Sold Products By The Date							https://leetcode.com/problems/group-sold-products-by-the-date/?envType=list&envId=e97a9e5m
+1581. Customer Who Visited but Did Not Make Any Transactions	https://leetcode.com/problems/customer-who-visited-but-did-not-make-any-transactions/?envType=list&envId=e97a9e5m
+1587. Bank Account Summary II									https://leetcode.com/problems/bank-account-summary-ii/?envType=list&envId=e97a9e5m
+1693. Daily Leads and Partners									https://leetcode.com/problems/daily-leads-and-partners/?envType=list&envId=e97a9e5m
+1729. Find Followers Count										https://leetcode.com/problems/find-followers-count/?envType=list&envId=e97a9e5m
+1757. Recyclable and Low Fat Products							https://leetcode.com/problems/recyclable-and-low-fat-products/?envType=list&envId=e97a9e5m
+1795. Rearrange Products Table									https://leetcode.com/problems/rearrange-products-table/?envType=list&envId=e97a9e5m
+1890. The Latest Login in 2020									https://leetcode.com/problems/the-latest-login-in-2020/?envType=list&envId=e97a9e5m
+1965. Employees With Missing Information						https://leetcode.com/problems/employees-with-missing-information/?envType=list&envId=e97a9e5m
+*/
 
 
 
@@ -1442,18 +1806,7 @@ GROUP BY teacher_id;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+648
 
 
 
